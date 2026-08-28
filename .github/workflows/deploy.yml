@@ -1,0 +1,14 @@
+# TODO: on push to main — run pytest, build image, push to registry,
+# deploy deploy/main.bicep. Deployed from a pipeline, not from a laptop.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # TODO: remaining steps

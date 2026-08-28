@@ -1,0 +1,2 @@
+# TODO: app service (built from ./Dockerfile) + local postgres service,
+# for dev parity with the prod DATABASE_URL shape.
