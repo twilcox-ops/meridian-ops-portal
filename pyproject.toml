@@ -26,6 +26,16 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+# Every router's Jinja2Templates(directory=...) resolves templates/ (and,
+# once static/ is mounted — see app.py's TODO) relative to the *installed*
+# ops_portal package's own location on disk (Path(__file__).resolve()...),
+# not to a source checkout. setuptools only includes .py files in a wheel
+# by default, so without this, `pip install .` (deploy/Dockerfile's
+# builder stage) would silently produce a working import but a 500 on
+# every page route the moment it tried to render a template.
+[tool.setuptools.package-data]
+ops_portal = ["templates/*.html", "static/css/*.css", "static/js/*.js"]
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]

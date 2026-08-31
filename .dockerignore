@@ -1,0 +1,22 @@
+# This is the .dockerignore Docker actually reads for
+# `docker build -f deploy/Dockerfile .` — Docker only honors a
+# .dockerignore at the root of the *build context* (the path argument,
+# `.` here), not one sitting next to the Dockerfile. deploy/.dockerignore
+# documents the same intent but, for that exact command, has no effect —
+# this file is the one that does. .env in particular must never end up in
+# the build context at all: excluded here means it's never sent to the
+# Docker daemon in the first place, not just skipped by a later COPY.
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.db
+*.sqlite3
+.env
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+normalization_output/
+tests/
+.git/

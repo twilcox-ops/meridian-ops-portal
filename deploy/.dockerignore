@@ -1,3 +1,10 @@
+# NOTE: this file has no effect on `docker build -f deploy/Dockerfile .`
+# (run from the project root, per deploy/README.md and the top-level
+# README's demo script) — Docker only reads .dockerignore from the root
+# of the build context (`.` in that command), not from next to the
+# Dockerfile. The one that actually applies is ../.dockerignore, at the
+# project root; this file is kept for documentation/for anyone building
+# with `deploy/` itself as the context, but is not the source of truth.
 .venv/
 __pycache__/
 *.db
