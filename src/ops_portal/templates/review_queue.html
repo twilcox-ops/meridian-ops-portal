@@ -1,1 +1,67 @@
-<!-- TODO: review queue screen — Project 2 low-confidence extractions, approve/correct via htmx. -->
+{% extends "layout.html" %}
+
+{% block title %}Review Queue — Meridian Ops Portal{% endblock %}
+
+{% block content %}
+<h1>Review Queue</h1>
+
+{% if not rows %}
+<p id="no-review-items">No review items yet.</p>
+{% else %}
+<table>
+    <thead>
+        <tr>
+            <th>Source document</th>
+            <th>Field</th>
+            <th>Extracted value</th>
+            <th>Confidence</th>
+            <th>Status</th>
+            <th>Pending proposal</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in rows %}
+        <tr>
+            <td>{{ row.item.source_document }}</td>
+            <td>{{ row.item.field_name }}</td>
+            <td>{{ row.item.extracted_value or "" }}</td>
+            <td>{{ "%.2f"|format(row.item.confidence) }}</td>
+            <td>{{ row.item.status.value }}</td>
+            <td>
+                {% if row.pending_approval %}
+                Pending: "{{ row.pending_approval.proposed_value }}" (requested by user #{{ row.pending_approval.requested_by_id }})
+                {% else %}
+                —
+                {% endif %}
+            </td>
+            <td>
+                {% if not row.pending_approval and row.item.status.value != "corrected" %}
+                <form method="post" action="/review-queue/{{ row.item.id }}/request">
+                    <input type="text" name="proposed_value" placeholder="Corrected value" required>
+                    <button type="submit">Request correction</button>
+                </form>
+                {% endif %}
+
+                {% if row.pending_approval %}
+                <!-- Approve/reject are approver-only, enforced server-side
+                     by require_role(UserRole.APPROVER) in
+                     routers/review_queue.py. Showing these buttons here
+                     regardless of the viewer's role is UX convenience,
+                     not access control — a viewer who submits one of
+                     these anyway still gets a 403 from the server, same
+                     as if they'd crafted the request by hand. -->
+                <form method="post" action="/review-queue/{{ row.pending_approval.id }}/approve" style="display:inline">
+                    <button type="submit">Approve</button>
+                </form>
+                <form method="post" action="/review-queue/{{ row.pending_approval.id }}/reject" style="display:inline">
+                    <button type="submit">Reject</button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endblock %}

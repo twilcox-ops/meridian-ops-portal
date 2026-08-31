@@ -3,7 +3,7 @@
 TODO:
 - mount static/ (templates/ needs no mounting — each router's own
   Jinja2Templates instance reads straight from the directory)
-- register the remaining routers: review_queue, ticket_triage
+- register the remaining router: ticket_triage
 """
 
 from fastapi import FastAPI
@@ -13,6 +13,7 @@ from .config import load_config
 from .routers.asset_registry import router as asset_registry_router
 from .routers.auth import router as auth_router
 from .routers.dashboard import router as dashboard_router
+from .routers.review_queue import router as review_queue_router
 
 app = FastAPI(title="Meridian Ops Portal")
 
@@ -28,3 +29,4 @@ app.add_middleware(SessionMiddleware, secret_key=_config.session_secret_key)
 app.include_router(auth_router)
 app.include_router(dashboard_router)
 app.include_router(asset_registry_router)
+app.include_router(review_queue_router)
