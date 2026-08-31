@@ -1,1 +1,54 @@
-<!-- Shared base layout. TODO: nav (Dashboard / Review Queue / Ticket Triage / Asset Registry), signed-in user + role, htmx script tag. Screen templates {% extends "layout.html" %}. -->
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Meridian Ops Portal{% endblock %}</title>
+    <!-- htmx: no interactive fragments use it yet (see routers/dashboard.py
+         and friends), but every screen template will extend this layout,
+         so the script tag belongs here once, not repeated per-screen. -->
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <style>
+        :root { color-scheme: light dark; }
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+            margin: 0;
+        }
+        nav {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 0.75rem 1.5rem;
+            border-bottom: 1px solid #8884;
+        }
+        nav a { text-decoration: none; font-weight: 500; }
+        nav a:hover { text-decoration: underline; }
+        .nav-spacer { flex: 1; }
+        .user-indicator { font-size: 0.9rem; opacity: 0.85; }
+        .user-indicator a { margin-left: 0.75rem; }
+        main { padding: 1.5rem; max-width: 60rem; }
+        dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.35rem 1rem; }
+        dt { font-weight: 600; }
+        dd { margin: 0; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/">Dashboard</a>
+        <a href="/review-queue">Review Queue</a>
+        <a href="/ticket-triage">Ticket Triage</a>
+        <a href="/asset-registry">Asset Registry</a>
+        <span class="nav-spacer"></span>
+        <span class="user-indicator">
+            {% if user %}
+                Signed in as {{ user.email }} ({{ user.role.value }})<a href="/logout">Log out</a>
+            {% else %}
+                <a href="/login">Log in</a>
+            {% endif %}
+        </span>
+    </nav>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

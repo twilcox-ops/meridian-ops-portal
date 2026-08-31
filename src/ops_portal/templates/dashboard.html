@@ -1,1 +1,25 @@
-<!-- TODO: dashboard screen — ingestion health from Project 1. -->
+{% extends "layout.html" %}
+
+{% block title %}Dashboard — Meridian Ops Portal{% endblock %}
+
+{% block content %}
+<h1>Dashboard</h1>
+
+<section>
+    <h2>Ingestion health — Project 1</h2>
+    {% if ingestion.available %}
+    <dl>
+        <dt>Records processed</dt>
+        <dd id="records-processed">{{ ingestion.records_processed }}</dd>
+
+        <dt>Last run</dt>
+        <dd id="last-run">{{ ingestion.last_run_at or "never" }} — {{ ingestion.last_run_status or "unknown" }}</dd>
+
+        <dt>Failures</dt>
+        <dd id="failures">{{ ingestion.failures }}</dd>
+    </dl>
+    {% else %}
+    <p id="ingestion-unavailable">No ingestion data available yet — PROJECT1_INGESTION_SOURCE is not configured, or Project 1 hasn't run.</p>
+    {% endif %}
+</section>
+{% endblock %}
