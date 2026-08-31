@@ -1,1 +1,55 @@
-<!-- TODO: ticket triage screen — Project 4 classifications, confidence, human override. -->
+{% extends "layout.html" %}
+
+{% block title %}Ticket Triage — Meridian Ops Portal{% endblock %}
+
+{% block content %}
+<h1>Ticket Triage</h1>
+
+{% if not tickets %}
+<p id="no-tickets">No ticket classifications yet.</p>
+{% else %}
+<table>
+    <thead>
+        <tr>
+            <th>Ticket</th>
+            <th>Predicted category</th>
+            <th>Predicted urgency</th>
+            <th>Confidence</th>
+            <th>Override</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ticket in tickets %}
+        <tr>
+            <td>{{ ticket.ticket_id }}</td>
+            <td>{{ ticket.predicted_category or "" }}</td>
+            <td>{{ ticket.predicted_urgency or "" }}</td>
+            <td>{{ "%.2f"|format(ticket.confidence) if ticket.confidence is not none else "" }}</td>
+            <td>
+                {% if ticket.override_category or ticket.override_urgency %}
+                {{ ticket.override_category or "" }} / {{ ticket.override_urgency or "" }}
+                (by user #{{ ticket.overridden_by_id }})
+                {% else %}
+                —
+                {% endif %}
+            </td>
+            <td>
+                {% if not (ticket.override_category or ticket.override_urgency) %}
+                <!-- No maker-checker gate here — unlike the review queue,
+                     any signed-in user can submit this directly (see
+                     routers/ticket_triage.py's docstring for why). It's
+                     still logged to audit_log, just not approval-gated. -->
+                <form method="post" action="/ticket-triage/{{ ticket.ticket_id }}/override">
+                    <input type="text" name="override_category" placeholder="Category override">
+                    <input type="text" name="override_urgency" placeholder="Urgency override">
+                    <button type="submit">Submit override</button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endblock %}
