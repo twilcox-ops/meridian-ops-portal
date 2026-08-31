@@ -11,11 +11,33 @@ defense, not the only one.
 """
 from __future__ import annotations
 
+from datetime import date, datetime
+from decimal import Decimal
 from typing import Any, Optional
 
 from sqlalchemy.orm import Session
 
 from ..db.models import AuditLog
+
+
+def _json_safe(value: Any) -> Any:
+    """Recursively converts a value into something the `JSON` column type
+    can hand to Python's stdlib json module — Decimal (e.g. a row's
+    last_service_cost) and date/datetime aren't natively serializable, and
+    a caller passing a raw normalized row (normalization/dedupe.py does
+    exactly this as `before`) shouldn't have to remember to convert those
+    itself every time. Anything already JSON-native passes through
+    unchanged.
+    """
+    if isinstance(value, dict):
+        return {key: _json_safe(v) for key, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(v) for v in value]
+    if isinstance(value, Decimal):
+        return str(value)
+    if isinstance(value, (date, datetime)):
+        return value.isoformat()
+    return value
 
 
 def log_change(
@@ -43,8 +65,8 @@ def log_change(
         action=action,
         entity_type=entity_type,
         entity_id=entity_id,
-        before=before,
-        after=after,
+        before=_json_safe(before),
+        after=_json_safe(after),
     )
     db.add(entry)
     db.flush()
