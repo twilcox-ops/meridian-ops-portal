@@ -6,13 +6,22 @@ require_role() only reads `.role` off whatever get_current_user() resolves
 to, so tests fake the session by overriding that dependency with one of
 these rather than exercising a real Entra ID login.
 
-TODO: an in-memory/temp-file SQLite session fixture and a FastAPI
-TestClient fixture wired to it, once routers exist to test end-to-end.
+db_session / client: for tests that need to exercise a real router
+end-to-end (e.g. routers/auth.py's find-or-create-on-login logic) — an
+isolated in-memory SQLite database, and a TestClient wired to it via a
+get_db dependency override so tests never touch the real
+sqlite:///./local.db.
 """
 from __future__ import annotations
 
 import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
+from ops_portal.app import app
+from ops_portal.db.base import Base, get_db
 from ops_portal.db.models import User, UserRole
 
 
@@ -36,3 +45,39 @@ def approver_user() -> User:
         display_name="Approver",
         role=UserRole.APPROVER,
     )
+
+
+@pytest.fixture()
+def db_session():
+    # `sqlite://` = in-memory; StaticPool keeps every connection pointing
+    # at the same underlying database (the default pool would hand out a
+    # fresh, empty in-memory database per connection) and
+    # check_same_thread=False allows the connection to cross the thread
+    # boundary TestClient's ASGI transport runs requests on.
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+        future=True,
+    )
+    Base.metadata.create_all(engine)
+    TestingSessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False, future=True)
+    session = TestingSessionLocal()
+    try:
+        yield session
+    finally:
+        session.close()
+        engine.dispose()
+
+
+@pytest.fixture()
+def client(db_session):
+    def _override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = _override_get_db
+    try:
+        with TestClient(app) as test_client:
+            yield test_client
+    finally:
+        app.dependency_overrides.pop(get_db, None)
