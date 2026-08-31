@@ -64,7 +64,12 @@ from .rules import normalize_currency, normalize_dashes, normalize_date, normali
 # its parent is the portfolio root.
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]
 _DEFAULT_SOURCE_PATH = _PROJECT_ROOT.parent / "sample-data" / "messy-asset-registry.csv"
-_DEFAULT_OUTPUT_DIR = _PROJECT_ROOT / "normalization_output"
+
+# Public (not underscore-prefixed): integrations/asset_registry_data.py
+# reads clean.csv/rejected.csv back out of this same directory for the
+# asset registry screen, so it needs this default too, rather than
+# hard-coding a second copy of it.
+DEFAULT_OUTPUT_DIR = _PROJECT_ROOT / "normalization_output"
 
 _SOURCE_FIELDNAMES = [
     "asset_tag",
@@ -104,7 +109,7 @@ def run_pipeline(
     their own docstrings for exactly what gets logged and why.
     """
     source_path = Path(source_path) if source_path is not None else _DEFAULT_SOURCE_PATH
-    output_dir = Path(output_dir) if output_dir is not None else _DEFAULT_OUTPUT_DIR
+    output_dir = Path(output_dir) if output_dir is not None else DEFAULT_OUTPUT_DIR
     output_dir.mkdir(parents=True, exist_ok=True)
 
     raw_rows = _read_source_rows(source_path)

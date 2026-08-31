@@ -1,1 +1,85 @@
-<!-- TODO: asset registry screen — cleaned Part 1 data, searchable, rejected rows + reasons visible. -->
+{% extends "layout.html" %}
+
+{% block title %}Asset Registry — Meridian Ops Portal{% endblock %}
+
+{% block content %}
+<h1>Asset Registry</h1>
+
+<!-- Plain GET form submit, not an htmx partial-swap: a full-page reload
+     here is simple, always correct, and keeps ?q= bookmarkable/shareable.
+     htmx would need this route to conditionally return a fragment instead
+     of a full page depending on the HX-Request header — more machinery
+     than a single search box is worth right now. -->
+<form method="get" action="/asset-registry">
+    <label for="q">Search (asset tag or building)</label>
+    <input type="search" id="q" name="q" value="{{ query }}" placeholder="e.g. MES-1234 or Harborview">
+    <button type="submit">Search</button>
+    {% if query %}<a href="/asset-registry">Clear</a>{% endif %}
+</form>
+
+<section>
+    <h2>Assets{% if query %} matching "{{ query }}"{% endif %}</h2>
+    {% if not available %}
+    <p id="registry-unavailable">No asset registry data yet — the Part 1 normalization pipeline hasn't been run.</p>
+    {% elif clean_rows %}
+    <table>
+        <thead>
+            <tr>
+                <th>Asset tag</th>
+                <th>Building</th>
+                <th>Unit</th>
+                <th>Install date</th>
+                <th>Status</th>
+                <th>Last service cost</th>
+                <th>Technician</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in clean_rows %}
+            <tr>
+                <td>{{ row.asset_tag }}</td>
+                <td>{{ row.building or "" }}</td>
+                <td>{{ row.unit_id or "" }}</td>
+                <td>{{ row.install_date or "" }}</td>
+                <td>{{ row.status or "" }}</td>
+                <td>{{ row.last_service_cost or "" }}</td>
+                <td>{{ row.technician or "" }}</td>
+                <td>{{ row.notes or "" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p id="no-matching-assets">No assets match "{{ query }}".</p>
+    {% endif %}
+</section>
+
+<section>
+    <h2>Rejected rows</h2>
+    {% if not available %}
+    <p id="rejected-unavailable">No rejection report yet — the Part 1 normalization pipeline hasn't been run.</p>
+    {% elif rejected_rows %}
+    <table>
+        <thead>
+            <tr>
+                <th>Asset tag</th>
+                <th>Building</th>
+                <th>Reason</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rejected_rows %}
+            <tr>
+                <td>{{ row.asset_tag or "" }}</td>
+                <td>{{ row.building or "" }}</td>
+                <td>{{ row.reason }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p id="no-rejected-rows">No rejected rows.</p>
+    {% endif %}
+</section>
+{% endblock %}
