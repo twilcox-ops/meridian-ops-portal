@@ -1,5 +1,36 @@
 {
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
   "contentVersion": "1.0.0.0",
-  "parameters": {}
+  "parameters": {
+    "environmentName": {
+      "value": "prod"
+    },
+    "location": {
+      "value": "eastus2"
+    },
+    "containerImageTag": {
+      "value": "latest"
+    },
+    "postgresAdminUsername": {
+      "value": "opsportaladmin"
+    },
+    "entraTenantId": {
+      "value": "REPLACE_WITH_ENTRA_TENANT_ID"
+    },
+    "entraClientId": {
+      "value": "REPLACE_WITH_ENTRA_CLIENT_ID"
+    },
+    "entraRedirectUri": {
+      "value": "REPLACE_WITH_DEPLOYED_CONTAINER_APP_URL/auth/callback"
+    },
+    "project1IngestionSource": {
+      "value": "REPLACE_WITH_PROJECT1_INGESTION_SOURCE"
+    },
+    "project2ReviewQueueSource": {
+      "value": "REPLACE_WITH_PROJECT2_REVIEW_QUEUE_SOURCE"
+    },
+    "project4TriageSource": {
+      "value": "REPLACE_WITH_PROJECT4_TRIAGE_SOURCE"
+    }
+  }
 }
