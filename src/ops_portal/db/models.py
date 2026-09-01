@@ -250,29 +250,33 @@ class AuditLog(Base):
     """Every state change: who, what, when, before, after. Immutable —
     append-only, no updates or deletes.
 
-    That's enforced at the database level, in two layers:
-
-    1. Right here, at table-creation time: a BEFORE UPDATE/DELETE trigger is
-       attached below via SQLAlchemy DDL events (`after_create`), one
-       dialect-specific statement for SQLite and one for Postgres. It fires
-       for any writer on any connection — the app's own ORM session, a
-       future admin script, a stray `UPDATE audit_log ...` typed by hand —
-       and raises before the write can complete. This is what makes the
-       guarantee real in both the sqlite:///./local.db dev database and a
-       Postgres instance that hasn't had its grants touched yet.
-    2. In the deployed Postgres database, this should additionally be
-       locked down with `REVOKE UPDATE, DELETE ON audit_log FROM
-       <app_role>;` (granting that role only SELECT and INSERT) once the
-       app's own least-privilege DB role is provisioned in deploy/ — a
-       second, independent layer, since a trigger can in principle be
-       dropped by anyone with DDL rights on the table, whereas a role that
-       was never granted UPDATE/DELETE can't exercise a privilege it
-       doesn't have. That grant lives in infra (Bicep) / the Alembic
-       migration, not here, because it names a DB role that doesn't exist
-       yet.
+    Enforced at the database level, today, by one real mechanism: right
+    here, at table-creation time, a BEFORE UPDATE/DELETE trigger is
+    attached below via SQLAlchemy DDL events (`after_create`), one
+    dialect-specific statement for SQLite and one for Postgres. It fires
+    for any writer on any connection — the app's own ORM session, a
+    future admin script, a stray `UPDATE audit_log ...` typed by hand —
+    and raises before the write can complete. This is what makes the
+    guarantee real in both the sqlite:///./local.db dev database and a
+    Postgres instance that hasn't had its grants touched yet. See
+    tests/test_audit_log.py, which exercises this trigger directly (raw
+    SQL and ORM-level UPDATE/DELETE, both against a real SQLite engine —
+    not a mocked one) rather than only asserting the convention below.
 
     services/audit.py additionally never exposes an update/delete function
-    at the application layer at all — belt, suspenders, and a third belt.
+    at the application layer at all — belt and suspenders, not belt alone.
+
+    NOT YET IMPLEMENTED: a second, independent database-level layer,
+    `REVOKE UPDATE, DELETE ON audit_log FROM <app_role>;` (granting that
+    role only SELECT and INSERT) in the deployed Postgres database, once
+    the app's own least-privilege DB role is provisioned in deploy/. This
+    would matter because a trigger can in principle be dropped by anyone
+    with DDL rights on the table, whereas a role that was never granted
+    UPDATE/DELETE can't exercise a privilege it doesn't have — but no such
+    role exists yet (deploy/main.bicep provisions the Postgres server and
+    database, not an application-level role or its grants), so this layer
+    is aspirational, not active. Today the trigger above is the only
+    database-level enforcement in place.
     """
 
     __tablename__ = "audit_log"

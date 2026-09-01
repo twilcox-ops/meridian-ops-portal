@@ -22,6 +22,7 @@ from ..auth.roles import parse_roles
 from ..auth.session import login_user, logout_user
 from ..db.base import get_db
 from ..db.models import User
+from ..services.audit import log_change
 
 router = APIRouter()
 
@@ -65,15 +66,40 @@ def auth_callback(request: Request, code: str, state: str, db: Session = Depends
 
     user = db.query(User).filter_by(entra_object_id=entra_object_id).first()
     if user is None:
+        # First-ever login for this identity: a creation, not a change to
+        # an existing row — nothing to log a before/after diff against, the
+        # same reasoning entity_resolution.py's "registering a brand new
+        # building writes no audit log row" applies under.
         user = User(entra_object_id=entra_object_id, email=email, display_name=display_name, role=role)
         db.add(user)
     else:
         # Keep the row in sync with the tenant on every login, so a role
         # change or rename in Entra ID takes effect the next time this
-        # person signs in rather than waiting on a separate sync job.
+        # person signs in rather than waiting on a separate sync job. This
+        # is a real state change to an existing row (unlike the creation
+        # branch above), so it's logged like every other one in this
+        # project — before/after captured around the mutation, actor_id=
+        # user.id since it's this person's own login that triggered the
+        # sync of their own record. Only logged if something in fact
+        # changed: a login that leaves email/display_name/role untouched
+        # isn't a state change, matching dedupe.py's "a group of one
+        # writes nothing" and entity_resolution.py's "no merge, no log
+        # entry" convention of not logging non-events.
+        before = {"email": user.email, "display_name": user.display_name, "role": user.role.value}
         user.email = email
         user.display_name = display_name
         user.role = role
+        after = {"email": user.email, "display_name": user.display_name, "role": user.role.value}
+        if before != after:
+            log_change(
+                db,
+                action="user.synced_from_entra",
+                entity_type="user",
+                entity_id=str(user.id),
+                before=before,
+                after=after,
+                actor_id=user.id,
+            )
     db.commit()
     db.refresh(user)
 
