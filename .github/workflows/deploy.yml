@@ -1,5 +1,11 @@
-# TODO: on push to main — run pytest, build image, push to registry,
-# deploy deploy/main.bicep. Deployed from a pipeline, not from a laptop.
+# CI validation — runs on every push to main.
+#
+# Checks that the three things this repo ships (the Python package/test
+# suite, the Docker image, and the Bicep IaC) each still build cleanly.
+# It does NOT deploy anything: no docker push, no az login, no az
+# deployment, no registry or Azure credentials are touched or required.
+# Deploying is a separate, not-yet-built step — see deploy/README.md.
+
 name: deploy
 
 on:
@@ -7,8 +13,30 @@ on:
     branches: [main]
 
 jobs:
-  build-and-deploy:
+  build-and-validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # TODO: remaining steps
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package and dev dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Run tests
+        run: pytest -v
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: docker build -t meridian-ops-portal -f deploy/Dockerfile .
+
+      - name: Install Bicep CLI
+        run: az bicep install
+
+      - name: Validate Bicep template compiles
+        run: az bicep build --file deploy/main.bicep
