@@ -27,6 +27,14 @@ jobs:
         run: pip install -e ".[dev]"
 
       - name: Run tests
+        env:
+          # app.py raises at import time if this is unset — checked, and
+          # it's the only environment variable config.py requires at
+          # import time (DATABASE_URL falls back to sqlite; the Entra
+          # vars are Optional and only read lazily when /login is hit).
+          # Not a real secret — same role deploy/.env.docker-test's key
+          # plays locally, just satisfying that import-time check.
+          SESSION_SECRET_KEY: ci-test-placeholder-not-a-real-secret
         run: pytest -v
 
       - name: Set up Docker Buildx
