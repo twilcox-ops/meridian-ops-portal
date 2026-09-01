@@ -43,6 +43,7 @@ Defaults to SQLite (`sqlite:///./local.db`) if `DATABASE_URL` isn't set. For loc
 Green = built and run-verified locally. Yellow = built, but only demoable end-to-end with real Entra credentials this environment doesn't have. Gray/dashed = Bicep IaC only — compiles clean, never deployed, nothing in that box actually exists in Azure yet.
 
 ```mermaid
+%%{init: {'themeVariables': {'edgeLabelBackground': '#ffffff'}}}%%
 flowchart TB
     Browser["Browser"]
 
@@ -73,9 +74,10 @@ flowchart TB
     Browser -- "HTTPS" --> App
     App -- "auth-code redirect<br/>(routers/auth.py, auth/msal_client.py —<br/>needs a real tenant + app registration)" --> AAD
 
-    style LIVE fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
-    style ENTRA fill:#fff8e1,stroke:#f9a825,stroke-width:2px
-    style IAC fill:#eceff1,stroke:#607d8b,stroke-width:2px,stroke-dasharray: 5 5
+    style LIVE fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#000
+    style ENTRA fill:#fff8e1,stroke:#f9a825,stroke-width:2px,color:#000
+    style IAC fill:#eceff1,stroke:#607d8b,stroke-width:2px,stroke-dasharray: 5 5,color:#000
+    linkStyle default color:#000
 ```
 
 ## Five-minute demo script
